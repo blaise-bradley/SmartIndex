@@ -28,3 +28,4 @@ $messages['qqq'] = array(
         'smartindex-no-index-table' => "This message appears when the table of index words is not
         								found in the database."
 );
+
