@@ -1,10 +1,17 @@
 <?php
 
+/* This file is responsible for the interpretation of the <smartIndex> parser tag.
+ * An index is produced based on the values given by the user. If the table of index
+ * words does not exist in the database, the user is prompted to first run database 
+ * maintanence from the special page generated for the that purpose. Else, the an
+ * index in the form of a list or a table is returned.
+ */
+
 /* Main function. */
 function SmartIndex($input, $args, Parser $parser, PPFrame $frame) {
 	#determine user options from input
 	$options = array('scoreMode' => 'default',  'IDFCutoff' => NULL, 'displayMode' => 'list',  
-					'template' => NULL, 'scoreFilter' => false, 'freqCutoff' => NULL);
+					'template' => NULL, 'freqCutoff' => NULL);
 	parseParams($input, $options);
 	
 	
@@ -12,7 +19,7 @@ function SmartIndex($input, $args, Parser $parser, PPFrame $frame) {
 	$dbr = &wfGetDB(DB_SLAVE);
 	if ($dbr->tableExists('smartindex_index_words')) {
 		$res = $dbr->select('smartindex_index_words', array('token', 'frequency', 'idf', 'pages'), 
-						'', '', array("ORDER BY token COLLATE 'latin1_general_ci'"));
+						'', '', array("ORDER BY token"));
 						
 	$stopWords = retrieveStopWords($dbr);
 						
@@ -21,6 +28,7 @@ function SmartIndex($input, $args, Parser $parser, PPFrame $frame) {
     											displayWordsTable($dbr, $res, $options, $stopWords);
     	
     	else $display = displayWordsList($dbr, $res, $options, $stopWords);
+    	$dbr->freeResult($res);
    		return $parser->recursiveTagParse($display, $frame);
    	}
    	else return wfMsg('smartindex-no-index-table');
@@ -57,6 +65,7 @@ function retrieveStopWords($dbr) {
 			$stopWords[] = $row->word;
 		}
 	}
+	$dbr->freeResult($res);
 	return $stopWords;
 }
 	
@@ -82,7 +91,6 @@ function displayWordsTable($dbr, $res, $options, $stopWords) {
 	for ($i = 0; $i < $numWords; ++$i) {
 		$row = $dbr->fetchObject($res);
 		if (!filterWord($row, $stopWords, $options)) {
-			$result .= $row->blemish . ' ';
 			$result .= $markTableNewRow . "\n";
 			$result .= "|" . $row->token . "\n|";
 		
@@ -92,7 +100,7 @@ function displayWordsTable($dbr, $res, $options, $stopWords) {
 			if ($options['scoreMode'] !== 'default') {
 				$result .= "\n|";
 				if ($options['scoreMode'] == 'frequency') $result .= $row->frequency;
-				else $result .= $row->idf;
+				else $result .= sprintf('%0.3f', $row->idf);
 			}
 		}
 	}
@@ -191,7 +199,7 @@ function makePageList($pages) {
 /* Produces a default output element for the index table. */
 function standardIndexElement($data, $row, $scoreMode) {
 	if ($scoreMode == 'frequency') $score = $row->frequency;
-	else $score = $row->idf;
+	else $score = sprintf('%0.3f', $row->idf);
 	$element = $row->token . "  (" . $score . ")";
 	$element .= "<span class='mw-collapsible mw-collapsed' data-expandtext='&#8658;'>";
 	$element .= makePageList($row->pages);
@@ -203,7 +211,7 @@ function standardIndexElement($data, $row, $scoreMode) {
 /* Produces output elements based on a template given as a parameter by the user. */
 function templateIndexElement($data, $row, $scoreMode, $templateName) {
 	if ($scoreMode == 'frequency') $score = $row->frequency;
-	else $score = $row->idf;
+	else $score = sprintf('%0.3f', $row->idf);
 	$element = "{{" . $templateName;
 	$element .= "\n| Word = " . $row->token;
 	$element .= "\n| Score = " . $score;

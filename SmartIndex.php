@@ -1,5 +1,7 @@
+
 <?php
 
+/* Setup file for the SmartIndex MediaWiki Extension. */
 
 if ( !defined( 'MEDIAWIKI' ) ) 
 	die( "This is an extension to the MediaWiki package and cannot be run standalone." );
@@ -7,7 +9,7 @@ if ( !defined( 'MEDIAWIKI' ) )
 #Set up parser tag
 $wgExtensionCredits['parserhook'][] = array(
 	'name' => 'SmartIndex',
-	'version' => '1.0-11.09.2012',
+	'version' => '1.5',
 	'author' => "Blaise Bradley",
 	'descriptionmsg' => 'smartindex-desc',
 	'url' => '',

@@ -1,5 +1,10 @@
 <?php
 
+/* Code for the special page that allows the usert to update the database tables
+ * associated with the index and stop words of the program. Builds the special page
+ * and handles the input from the user interface.
+ */
+
 class SmartIndexMaintenance extends SpecialPage {
 	# private internal values
 	private $caseSen, $trim;
@@ -12,7 +17,7 @@ class SmartIndexMaintenance extends SpecialPage {
 	
 	public function execute ($par) {
 		global $wgOut, $wgRequest;
-		$wgOut->setPageTitle("SmartIndexMaintenance");
+		$wgOut->setPageTitle(wfMsg('smartindexmaintenance'));
 		$param = $wgRequest->getText('param');
 
 		#update database table of index words
@@ -23,9 +28,9 @@ class SmartIndexMaintenance extends SpecialPage {
 			
 			if ($this->createIndexTable()) {
 				$this->getWordData();
-				$wgOut->addWikiText("Index table succesfuly updated." . '<br>');
+				$wgOut->addWikiText(wfMsg('smartindex-index-table-updated'));
 			} else {
-				$wgOut->addWikiText("Index table update failed");
+				$wgOut->addWikiText(wfMsg('smartindex-index-table-update-failed'));
 			}
 		}
 		
@@ -34,26 +39,36 @@ class SmartIndexMaintenance extends SpecialPage {
 			$stopWordPage = $wgRequest->getText('stopwords');
 			if($this->createStopWordTable($stopWordPage)) {
 				if ($this->getStopWords($stopWordPage)) {
-					$wgOut->addWikiText("Stop words updated." . '<br>');
+					$wgOut->addWikiText(wfMsg('smartindex-stop-words-updated'));
 				} else {
-					$wgOut->addWikiText("Unable to update stop words. Please make sure the page '" 
-										. $stopWordPage . "' exists in this Wiki.");
+					$wgOut->addWikiText(wfMsg('smartindex-stop-words-no-page'));
 				}
 			} else {
-				$wgOut->addWikiText("Unable to create stop word table in the database.");
+				$wgOut->addWikiText(wfMsg('smartindex-stop-words-table-failed'));
 			}
+		}
+		
+		#clear database table of stop words
+		if ($wgRequest->getCheck('clearstop')) {
+			$dbw = &wfGetDB(DB_MASTER);
+			if ($dbw->tableExists('smartindex_stop_words')) {
+				$dbw->query('drop table smartindex_stop_words');
+				$dbw->commit();
+			}
+			$wgOut->addWikiText(wfMsg('smartindex-stop-words-cleared'));
 		}
 	
 		
-		# build the form for updating the index words database table
+		# build the form for updating the database tables for index and stop words
 		$updateWordsForm = Xml::openElement( 'form', array( 'method' => 'post',
 			'action' => $this->getTitle()->getLocalUrl( 'action=submit' ) ) );
-		$updateWordsForm .= Xml::inputLabel('Characters to trim:', 'trimchars', 'trimchars', 40 ) . '&#160;';
-		$updateWordsForm .= Xml::submitButton('Update Index Words', array('name' => 'updateindex')) . '<br />';
-		$updateWordsForm .= XML::checkLabel('Case sensitive', 'case', 'case', true). '<br />' . '<br />';
-		$updateWordsForm .= XML::inputLabel('Stop words page:', 'stopwords', 'stopwords', 40) . '&#160;';
-		$updateWordsForm .= XML::submitButton('Update Stop Words', array('name' => 'updatestop')) . '<br />';
-		$updateWordsForm .= Xml::closeElement( 'form' );     
+		$updateWordsForm .= Xml::inputLabel(wfMsg('smartindex-trim-chars-label'), 'trimchars', 'trimchars', 40 ) . '&#160;';
+		$updateWordsForm .= Xml::submitButton(wfMsg('smartindex-index-words-submit'), array('name' => 'updateindex')) . '<br />';
+		$updateWordsForm .= XML::checkLabel(wfMsg('smartindex-case-sensitive'), 'case', 'case', true). '<br />' . '<br />';
+		$updateWordsForm .= XML::inputLabel(wfMsg('smartindex-stop-words-label'), 'stopwords', 'stopwords', 40) . '&#160;';
+		$updateWordsForm .= XML::submitButton(wfMsg('smartindex-stop-words-submit'), array('name' => 'updatestop')) . '&#160;';
+		$updateWordsForm .= XML::submitButton(wfMsg('smartindex-clear-stop-words'), array('name' => 'clearstop')) . '<br />';
+		$updateWordsForm .= Xml::closeElement('form');     
 		$wgOut->addHTML($updateWordsForm);	
 		
 	}
@@ -61,7 +76,7 @@ class SmartIndexMaintenance extends SpecialPage {
 
 	/* Creates the database table for index words. */
 	function createIndexTable() {
-		$dbw = wfGetDB(DB_MASTER);
+		$dbw = &wfGetDB(DB_MASTER);
 		#drop the table if it already exists
 		if ($dbw->tableExists('smartindex_index_words')) {
 			$dbw->query('drop table smartindex_index_words');
@@ -128,7 +143,6 @@ QUERYSTR;
                 	array('ORDER BY' => 'page_id'));
     
     	#get the text from the page containing the stop words
-    
    		$row = $dbr->fetchObject($res);
     	for ($i = 0; $i < $dbr->numRows($res); ++$i) {
     		if ($row->page_title == $listPage) {
@@ -138,6 +152,7 @@ QUERYSTR;
     		$row = $dbr->fetchObject($res);
    		}
     	if ($i == $dbr->numRows($res)) return false;
+    	$dbr->freeResult($res);
     	
     	#build stop word list from page
     	$wordText = $row->old_text;
@@ -172,6 +187,7 @@ QUERYSTR;
 			$title = $row->page_title; 
 			$this->getPageData($wordData, $title, $row->old_text);
 		}
+		$dbr->freeResult($res);
 		$this->addToDatabase($wordData, $pages);
  	}
  	
