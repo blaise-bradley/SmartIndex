@@ -26,7 +26,7 @@ $messages['en'] = array(
         'smartindex-stop-words-label' => "Stop Word Page: ",
         'smartindex-stop-words-submit' => "Update Stop Words",
         'smartindex-clear-stop-words' => "Clear Stop Words",
-        'smartindex-stop-words-cleared' => "Stop words cleared."
+        'smartindex-stop-words-cleared' => "Stop words cleared." . '<br>'
 );
 
 /** German (Deutsch)

@@ -64,8 +64,9 @@ function retrieveStopWords($dbr) {
 			$row = $dbr->fetchObject($res);
 			$stopWords[] = $row->word;
 		}
+		$dbr->freeResult($res); //KH 16.7.2013 (in den if-Block hineingenommen,
+					// da sonst $res undefiniert u Abbruch mit Fehler
 	}
-	$dbr->freeResult($res);
 	return $stopWords;
 }
 	
@@ -156,7 +157,7 @@ function displayWordsList($dbr, $res, $options, $stopWords) {
 	
 	$result = '';
 	foreach ($headers as $header) {
-		$result .= "[[{{PAGENAME}}#" . $header . "|" . $header . "]] ";
+		$result .= "[[{{FULLPAGENAME}}#" . $header . "|" . $header . "]] "; //KH 16.7.2013 changed from PAGENAME to FULLPAGENAME
 	}
 	$result .= '<br>' . $index;
 	return $result;

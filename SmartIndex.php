@@ -31,7 +31,7 @@ $dir = dirname(__FILE__) . '/';
 require_once($dir . 'SmartIndex_body.php');
 
 #Set up Special Page for maintenance
-$wgAutoloadClasses['SmartIndexMaintenance'] = $dir . 'SmartIndexMaintenance.php';
+$wgAutoloadClasses['SmartIndexMaintenance'] = $dir . 'SmartIndexMaintenanceEnglish.php';
 $wgSpecialPages['SmartIndexMaintenance'] = 'SmartIndexMaintenance';
 
 $wgExtensionMessagesFiles['SmartIndex'] = $dir . 'SmartIndex.i18n.php'; # Location of messages file
